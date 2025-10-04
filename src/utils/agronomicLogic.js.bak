@@ -1,0 +1,448 @@
+// Soil type characteristics
+export const SOIL_TYPES = {
+  clay: {
+    waterRetention: 0.9, // High water retention
+    drainageRate: 0.3,   // Slow drainage
+    fertilizerRetention: 0.8, // High nutrient retention
+    description: 'Clay soils retain water and nutrients well but have poor drainage.'
+  const { waterEfficiency, fertilizerEfficiency, excessWater, excessFertilizer } = params;
+
+  // Weighted components
+  const waterScore = (waterEfficiency * 40) - (excessWater * 20);
+  const fertilizerScore = (fertilizerEfficiency * 40) - (excessFertilizer * 20);
+  const resourceUseScore = Math.max(0, Math.min(100, waterScore + fertilizerScore));
+
+  return Math.round(resourceUseScore);
+}
+
+export function calculateSoilHealthScore(simulationData, params) {
+  const crop = CROP_PARAMETERS[params.cropType.toLowerCase()];
+  if (!crop) return 0;
+
+  // pH score (0-100)
+  const pHScore = 100 - Math.min(100, 
+    Math.abs(params.soilPH - crop.optimalSoilPH.ideal) / 
+    (crop.optimalSoilPH.max - crop.optimalSoilPH.min) * 100
+  );
+
+  // NPK score (0-100)
+  const nScore = 100 - Math.min(100, 
+    Math.abs(params.nitrogenLevel - crop.optimalNPK.N.ideal) / 
+    (crop.optimalNPK.N.max - crop.optimalNPK.N.min) * 100
+  );
+  const pScore = 100 - Math.min(100, 
+    Math.abs(params.phosphorusLevel - crop.optimalNPK.P.ideal) / 
+    (crop.optimalNPK.P.max - crop.optimalNPK.P.min) * 100
+  );
+  const kScore = 100 - Math.min(100, 
+    Math.abs(params.potassiumLevel - crop.optimalNPK.K.ideal) / 
+    (crop.optimalNPK.K.max - crop.optimalNPK.K.min) * 100
+  );
+  
+  // Organic matter score (0-100)
+  const organicMatterScore = 100 - Math.min(100, 
+    Math.abs(params.organicMatter - crop.organicMatterRequirement.ideal) / 
+    (crop.organicMatterRequirement.max - crop.organicMatterRequirement.min) * 100
+  );
+
+  // Calculate final soil health score with weights
+  return Math.round(
+    pHScore * 0.2 +          // 20% weight for pH
+    nScore * 0.2 +           // 20% weight for Nitrogen
+    pScore * 0.15 +          // 15% weight for Phosphorus
+    kScore * 0.15 +          // 15% weight for Potassium
+    organicMatterScore * 0.3 // 30% weight for organic matter
+  );
+}
+
+export function calculateOrganicScore(simulationData, params) {
+  // Base score from organic fertilizer use
+  let score = params.organicFertilizer ? 50 : 0;
+  
+  // Add points for sustainable practices (up to 50 points)
+  if (params.sustainablePractices) {
+    const practiceScore = Math.min(50, (params.sustainablePractices.length / 10) * 50);
+    score += practiceScore;
+  }
+  
+  return Math.round(score);
+}
+
+export function calculateSoilHealthScore(data, params) {
+  const crop = CROP_PARAMETERS[params.cropType];
+  
+  // pH score (0-100)
+  const pHScore = 100 - Math.min(100, 
+    Math.abs(params.soilPH - crop.optimalSoilPH.ideal) / 
+    (crop.optimalSoilPH.max - crop.optimalSoilPH.min) * 100
+  );
+
+  // NPK score (0-100)
+  const nScore = 100 - Math.min(100, 
+    Math.abs(params.nitrogenLevel - crop.optimalNPK.N.ideal) / 
+    (crop.optimalNPK.N.max - crop.optimalNPK.N.min) * 100
+  );
+  const pScore = 100 - Math.min(100, 
+    Math.abs(params.phosphorusLevel - crop.optimalNPK.P.ideal) / 
+    (crop.optimalNPK.P.max - crop.optimalNPK.P.min) * 100
+  );
+  const kScore = 100 - Math.min(100, 
+    Math.abs(params.potassiumLevel - crop.optimalNPK.K.ideal) / 
+    (crop.optimalNPK.K.max - crop.optimalNPK.K.min) * 100
+  );
+  
+  // Organic matter score (0-100)
+  const organicMatterScore = 100 - Math.min(100, 
+    Math.abs(params.organicMatter - crop.organicMatterRequirement.ideal) / 
+    (crop.organicMatterRequirement.max - crop.organicMatterRequirement.min) * 100
+  );
+
+  // Calculate final soil health score with weights
+  return Math.round(
+    pHScore * 0.2 +          // 20% weight for pH
+    nScore * 0.2 +           // 20% weight for Nitrogen
+    pScore * 0.15 +          // 15% weight for Phosphorus
+    kScore * 0.15 +          // 15% weight for Potassium
+    organicMatterScore * 0.3 // 30% weight for organic matter
+  );
+}
+
+export function calculateOrganicScore(data, params) {
+  // Base score from organic fertilizer use
+  let score = params.organicFertilizer ? 50 : 0;
+  
+  // Add points for sustainable practices (up to 50 points)
+  if (data.farmData?.sustainablePractices) {
+    const practiceScore = Math.min(50, (data.farmData.sustainablePractices.length / 10) * 50);
+    score += practiceScore;
+  }
+  
+  return Math.round(score);
+}etain water and nutrients well but have poor drainage.'
+  },
+  loam: {
+    waterRetention: 0.7, // Balanced water retention
+    drainageRate: 0.6,   // Medium drainage
+    fertilizerRetention: 0.7, // Good nutrient retention
+    description: 'Loam soils offer balanced water retention and drainage.'
+  },
+  sandy: {
+    waterRetention: 0.3, // Low water retention
+    drainageRate: 0.9,   // Fast drainage
+    fertilizerRetention: 0.4, // Poor nutrient retention
+    description: 'Sandy soils drain quickly and need more frequent irrigation.'
+  }
+};
+
+// Detailed crop parameters based on scientific research
+export const CROP_PARAMETERS = {
+  wheat: {
+    optimalTemp: {
+      min: 18,
+      ideal: 20,
+      max: 24
+    },
+    optimalSoilPH: {
+      min: 6.0,
+      ideal: 6.5,
+      max: 7.5
+    },
+    optimalNPK: {
+      N: { min: 30, ideal: 40, max: 50 },
+      P: { min: 20, ideal: 30, max: 40 },
+      K: { min: 15, ideal: 20, max: 25 }
+    },
+    organicMatterRequirement: {
+      min: 2,
+      ideal: 3,
+      max: 5
+    },
+    tempRange: 15,
+    growthStages: {
+      germination: { water: 40, temp: 20 },
+      vegetative: { water: 200, temp: 18 },
+      reproductive: { water: 250, temp: 22 },
+      maturation: { water: 110, temp: 20 }
+    },
+    waterNeed: 600, // mm per season
+    fertilizerNeed: {
+      nitrogen: 60, // kg/ha
+      phosphorus: 30,
+      potassium: 30
+    },
+    baseYield: 4000, // kg/hectare under optimal conditions
+    stressThresholds: {
+      drought: 0.6, // 60% of water need
+      waterlogging: 1.3, // 130% of water need
+      heatStress: 28, // °C
+      coldStress: 5 // °C
+    }
+  },
+  rice: {
+    optimalTemp: {
+      min: 22,
+      ideal: 25,
+      max: 30
+    },
+    tempRange: 10,
+    growthStages: {
+      germination: { water: 100, temp: 25 },
+      vegetative: { water: 400, temp: 25 },
+      reproductive: { water: 500, temp: 24 },
+      maturation: { water: 200, temp: 26 }
+    },
+    waterNeed: 1200,
+    fertilizerNeed: {
+      nitrogen: 70,
+      phosphorus: 35,
+      potassium: 40
+    },
+    baseYield: 5000,
+    stressThresholds: {
+      drought: 0.7,
+      waterlogging: 1.5,
+      heatStress: 35,
+      coldStress: 12
+    }
+  },
+  corn: {
+    optimalTemp: {
+      min: 20,
+      ideal: 23,
+      max: 28
+    },
+    tempRange: 12,
+    growthStages: {
+      germination: { water: 60, temp: 22 },
+      vegetative: { water: 300, temp: 23 },
+      reproductive: { water: 350, temp: 24 },
+      maturation: { water: 90, temp: 22 }
+    },
+    waterNeed: 800,
+    fertilizerNeed: {
+      nitrogen: 65,
+      phosphorus: 40,
+      potassium: 45
+    },
+    baseYield: 6000,
+    stressThresholds: {
+      drought: 0.65,
+      waterlogging: 1.2,
+      heatStress: 32,
+      coldStress: 8
+    }
+  }
+};
+
+export function generateSpecificRecommendations(params) {
+  const {
+    cropType,
+    temperature,
+    rainfall,
+    irrigation,
+    fertilizer,
+    weatherForecast
+  } = params;
+
+  const crop = CROP_PARAMETERS[cropType.toLowerCase()];
+  const recommendations = [];
+  
+  // Convert irrigation slider (0-100) to actual water amount
+  const irrigationWater = (irrigation / 100) * crop.waterNeed;
+  const totalWater = rainfall + irrigationWater;
+
+  // Temperature Analysis
+  if (temperature < crop.optimalTemp.min) {
+    const tempDiff = crop.optimalTemp.min - temperature;
+    recommendations.push({
+      type: 'temperature_low',
+      severity: tempDiff > 5 ? 'high' : 'medium',
+      action: tempDiff > 5 
+        ? `Critical: Protect crops from cold damage. Consider using frost protection methods like row covers or wind machines. Plant during warmer periods when temperature is above ${crop.optimalTemp.min}°C.`
+        : `Advisory: Monitor night temperatures. Consider using mulch to retain soil heat. Optimal temperature range is ${crop.optimalTemp.min}-${crop.optimalTemp.max}°C.`
+    });
+  } else if (temperature > crop.optimalTemp.max) {
+    const tempDiff = temperature - crop.optimalTemp.max;
+    recommendations.push({
+      type: 'temperature_high',
+      severity: tempDiff > 5 ? 'high' : 'medium',
+      action: tempDiff > 5
+        ? `Critical: Implement shade structures or overhead sprinkler cooling. Schedule irrigation during early morning. Consider heat-tolerant ${cropType} varieties for next season.`
+        : `Advisory: Increase irrigation frequency but reduce volume per session. Apply mulch to keep soil cool. Best growing temperature is ${crop.optimalTemp.ideal}°C.`
+    });
+  }
+
+  // Water Management
+  const waterDeficit = crop.waterNeed - totalWater;
+  if (waterDeficit > 0) {
+    recommendations.push({
+      type: 'water_deficit',
+      severity: waterDeficit > crop.waterNeed * 0.3 ? 'high' : 'medium',
+      action: waterDeficit > crop.waterNeed * 0.3
+        ? `Critical: Increase irrigation by ${Math.round(waterDeficit)}mm. Schedule irrigation early morning or evening. Consider installing drip irrigation for better water efficiency.`
+        : `Advisory: Increase irrigation by ${Math.round(waterDeficit)}mm. Apply mulch to reduce evaporation. Monitor soil moisture daily.`
+    });
+  } else if (totalWater > crop.waterNeed * crop.stressThresholds.waterlogging) {
+    const excessWater = totalWater - crop.waterNeed;
+    recommendations.push({
+      type: 'water_excess',
+      severity: 'high',
+      action: `Critical: Reduce irrigation immediately by ${Math.round(excessWater)}mm. Check field drainage. Risk of root rot and nutrient leaching. Consider installing drainage channels.`
+    });
+  }
+
+  // Fertilizer Management
+  const fertilizerDiff = crop.fertilizerNeed.nitrogen - fertilizer;
+  if (Math.abs(fertilizerDiff) > 10) {
+    recommendations.push({
+      type: 'fertilizer_adjustment',
+      severity: Math.abs(fertilizerDiff) > 20 ? 'high' : 'medium',
+      action: fertilizerDiff > 0
+        ? `Increase fertilizer application by ${Math.round(fertilizerDiff)}kg/ha. Split application into 2-3 sessions. Focus on nitrogen-rich fertilizers.`
+        : `Reduce fertilizer by ${Math.round(-fertilizerDiff)}kg/ha. High fertilizer risks nutrient runoff and water pollution. Test soil before next application.`
+    });
+  }
+
+  return {
+    recommendations,
+    expectedYield: calculateExpectedYield({
+      crop,
+      temperature,
+      totalWater,
+      fertilizer
+    }),
+    sustainabilityScore: calculateSustainabilityScore({
+      waterEfficiency: 1 - Math.abs(totalWater - crop.waterNeed) / crop.waterNeed,
+      fertilizerEfficiency: 1 - Math.abs(fertilizer - crop.fertilizerNeed.nitrogen) / crop.fertilizerNeed.nitrogen,
+      excessWater: Math.max(0, totalWater - crop.waterNeed * crop.stressThresholds.waterlogging) / crop.waterNeed,
+      excessFertilizer: Math.max(0, fertilizer - crop.fertilizerNeed.nitrogen) / crop.fertilizerNeed.nitrogen
+    })
+  };
+}
+
+function calculateExpectedYield(params) {
+  const { crop, temperature, totalWater, fertilizer } = params;
+  
+  // Temperature stress factor (0-1)
+  const tempStress = temperature < crop.optimalTemp.min
+    ? Math.max(0, 1 - (crop.optimalTemp.min - temperature) / crop.tempRange)
+    : temperature > crop.optimalTemp.max
+    ? Math.max(0, 1 - (temperature - crop.optimalTemp.max) / crop.tempRange)
+    : 1;
+
+  // Water stress factor (0-1)
+  const waterStress = Math.min(totalWater / crop.waterNeed, 
+    totalWater > crop.waterNeed * crop.stressThresholds.waterlogging 
+      ? 1 - (totalWater - crop.waterNeed * crop.stressThresholds.waterlogging) / crop.waterNeed
+      : totalWater / crop.waterNeed);
+
+  // Fertilizer efficiency (0-1)
+  const fertilizerEfficiency = 1 - Math.abs(fertilizer - crop.fertilizerNeed.nitrogen) / crop.fertilizerNeed.nitrogen;
+
+  // Calculate yield
+  const yieldReduction = 1 - (tempStress * waterStress * fertilizerEfficiency);
+  const expectedYield = crop.baseYield * (1 - yieldReduction);
+
+  return {
+    yield: Math.round(expectedYield),
+    reductionFactors: {
+      temperature: Math.round(tempStress * 100),
+      water: Math.round(waterStress * 100),
+      fertilizer: Math.round(fertilizerEfficiency * 100)
+    }
+  };
+}
+
+function calculateSustainabilityScore(params) {
+  const { waterEfficiency, fertilizerEfficiency, excessWater, excessFertilizer } = params;
+
+  // Weighted components
+  const waterScore = (waterEfficiency * 40) - (excessWater * 20);
+  const fertilizerScore = (fertilizerEfficiency * 40) - (excessFertilizer * 20);
+  const resourceUseScore = Math.max(0, Math.min(100, waterScore + fertilizerScore));
+
+  return Math.round(resourceUseScore);
+}
+
+export function calculateFarmerScore(params) {
+  const {
+    waterEfficiency = 0,
+    fertilizerEfficiency = 0,
+    excessWater = 0,
+    excessFertilizer = 0,
+    yieldScore = 0,
+    sustainabilityScore = 0,
+    soilHealthScore = 0,
+    organicPracticeScore = 0
+  } = params;
+
+  // Base score components (total 70%)
+  const yieldComponent = (yieldScore / 100) * 25; // 25% weight for yield
+  const sustainabilityComponent = (sustainabilityScore / 100) * 25; // 25% weight for sustainability
+  const soilHealthComponent = (soilHealthScore / 100) * 20; // 20% weight for soil health
+
+  // Penalty components (can reduce up to 30%)
+  const waterPenalty = excessWater * 10; // Water waste penalty
+  const fertilizerPenalty = excessFertilizer * 10; // Fertilizer waste penalty
+  const soilDegradationPenalty = Math.max(0, (5 - organicMatter) * 5); // Soil degradation penalty
+
+  // Bonus components (can add up to 30%)
+  const efficiencyBonus = ((waterEfficiency + fertilizerEfficiency) / 2) * 15; // Resource efficiency bonus
+  const organicBonus = organicPracticeScore * 15; // Organic farming bonus
+
+  // Calculate final score
+  const rawScore = yieldComponent + sustainabilityComponent + efficiencyBonus - waterPenalty - fertilizerPenalty;
+  const finalScore = Math.max(0, Math.min(100, rawScore));
+
+  // Determine achievement level
+  let achievement = '';
+  if (finalScore >= 90) {
+    achievement = 'Master Farmer: Truly Sustainable!';
+  } else if (finalScore >= 80) {
+    achievement = 'Expert Farmer: Eco-Smart!';
+  } else if (finalScore >= 70) {
+    achievement = 'Skilled Farmer: Growing Well!';
+  } else if (finalScore >= 60) {
+    achievement = 'Novice Farmer: Keep Growing!';
+  } else {
+    achievement = 'Learning Farmer: Room to Grow!';
+  }
+
+  return {
+    score: Math.round(finalScore),
+    achievement,
+    breakdown: {
+      yieldContribution: Math.round(yieldComponent),
+      sustainabilityContribution: Math.round(sustainabilityComponent),
+      efficiencyBonus: Math.round(efficiencyBonus),
+      penalties: Math.round(waterPenalty + fertilizerPenalty)
+    }
+  };
+}
+
+// AI optimization function
+export const optimizeParameters = (cropType, soilType, weather) => {
+  const crop = CROP_PARAMETERS[cropType];
+  const soil = SOIL_TYPES[soilType];
+  
+  // Base water need adjusted for soil type and rainfall
+  const effectiveRainfall = weather.PRECTOTCORR * soil.waterRetention;
+  const waterDeficit = Math.max(0, crop.waterNeed - effectiveRainfall);
+  
+  // Calculate optimal irrigation
+  const recommendedIrrigation = Math.min(100, (waterDeficit / crop.waterNeed) * 100);
+  
+  // Adjust fertilizer based on soil retention and rainfall
+  const baseFertilizer = crop.fertilizerNeed.nitrogen;
+  const leachingFactor = 1 + (1 - soil.fertilizerRetention) * (weather.PRECTOTCORR / crop.waterNeed);
+  const recommendedFertilizer = Math.min(100, (baseFertilizer * leachingFactor) / 2);
+  
+  return {
+    irrigation: Math.round(recommendedIrrigation),
+    fertilizer: Math.round(recommendedFertilizer),
+    explanation: {
+      irrigation: `Based on rainfall of ${weather.PRECTOTCORR}mm and ${soil.description}`,
+      fertilizer: `Adjusted for soil nutrient retention and leaching risk.`
+    }
+  };
+};

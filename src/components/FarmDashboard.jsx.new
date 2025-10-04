@@ -1,0 +1,192 @@
+import React, { useState } from 'react';
+import { motion } from 'framer-motion';
+import { LineChart, Line, PieChart, Pie, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell } from 'recharts';
+import { calculateFarmerScore, simulateFarming } from '../utils/agronomicLogic';
+import FarmDataInput from './FarmDataInput';
+import FarmScoreResults from './FarmScoreResults';
+import InputSlider from './InputSlider';
+
+const COLORS = {
+  yield: '#EAB308',
+  water: '#0EA5E9',
+  sustainability: '#22C55E',
+  irrigation: '#3B82F6',
+  rainfall: '#38BDF8',
+  soilHealth: '#4ADE80'
+};
+
+const DashboardCard = ({ title, children, className = '' }) => (
+  <motion.div
+    initial={{ opacity: 0, y: 20 }}
+    animate={{ opacity: 1, y: 0 }}
+    className={`bg-white dark:bg-gray-800 rounded-2xl shadow-lg backdrop-blur-sm backdrop-filter overflow-hidden transition-all duration-200 ${className}`}
+  >
+    <div className="p-6">
+      <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4">{title}</h3>
+      <div className="w-full">{children}</div>
+    </div>
+  </motion.div>
+);
+
+const FarmDashboard = ({ 
+  weatherData,
+  isLoading,
+  error,
+  farmSettings,
+  onSettingsChange,
+  simulationData
+}) => {
+  const [showResults, setShowResults] = useState(false);
+  const [farmScoreData, setFarmScoreData] = useState(null);
+
+  const handleIrrigationChange = (value) => {
+    onSettingsChange({
+      ...farmSettings,
+      irrigation: value
+    });
+  };
+
+  const handleFertilizerChange = (value) => {
+    onSettingsChange({
+      ...farmSettings,
+      fertilizer: value
+    });
+  };
+
+  const handleFarmDataSubmit = (data) => {
+    try {
+      const results = simulateFarming({
+        ...data,
+        weatherData,
+        irrigation: farmSettings.irrigation,
+        fertilizer: farmSettings.fertilizer
+      });
+
+      setFarmScoreData(results);
+      setShowResults(true);
+    } catch (err) {
+      console.error('Simulation error:', err);
+      setShowResults(false);
+    }
+  };
+
+  const renderCharts = () => {
+    if (!simulationData) return null;
+
+    const efficiencyData = [
+      { name: 'Water', value: simulationData.waterEfficiency },
+      { name: 'Fertilizer', value: simulationData.fertilizerEfficiency }
+    ];
+
+    const scoreData = [
+      { name: 'Yield', value: simulationData.yieldScore },
+      { name: 'Sustainability', value: simulationData.sustainabilityScore }
+    ];
+
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <DashboardCard title="Resource Efficiency">
+          <ResponsiveContainer width="100%" height={300}>
+            <PieChart>
+              <Pie
+                data={efficiencyData}
+                cx="50%"
+                cy="50%"
+                outerRadius={80}
+                fill="#8884d8"
+                dataKey="value"
+                label={({ name, value }) => `${name}: ${value}%`}
+              >
+                {efficiencyData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={COLORS[entry.name.toLowerCase()]} />
+                ))}
+              </Pie>
+              <Tooltip />
+              <Legend />
+            </PieChart>
+          </ResponsiveContainer>
+        </DashboardCard>
+
+        <DashboardCard title="Performance Scores">
+          <ResponsiveContainer width="100%" height={300}>
+            <PieChart>
+              <Pie
+                data={scoreData}
+                cx="50%"
+                cy="50%"
+                outerRadius={80}
+                fill="#8884d8"
+                dataKey="value"
+                label={({ name, value }) => `${name}: ${value}%`}
+              >
+                {scoreData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={COLORS[entry.name.toLowerCase()]} />
+                ))}
+              </Pie>
+              <Tooltip />
+              <Legend />
+            </PieChart>
+          </ResponsiveContainer>
+        </DashboardCard>
+      </div>
+    );
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-red-500 text-center p-4">
+        {error}
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <DashboardCard title="Irrigation Control">
+          <InputSlider
+            value={farmSettings.irrigation}
+            onChange={handleIrrigationChange}
+            min={0}
+            max={100}
+            label="Irrigation Level"
+            help="Adjust irrigation level (0-100%)"
+          />
+        </DashboardCard>
+
+        <DashboardCard title="Fertilizer Control">
+          <InputSlider
+            value={farmSettings.fertilizer}
+            onChange={handleFertilizerChange}
+            min={0}
+            max={100}
+            label="Fertilizer Amount"
+            help="Adjust fertilizer amount (0-100%)"
+          />
+        </DashboardCard>
+      </div>
+
+      {renderCharts()}
+
+      <DashboardCard title="Farm Data Input">
+        <FarmDataInput onSubmit={handleFarmDataSubmit} />
+      </DashboardCard>
+
+      {showResults && farmScoreData && (
+        <DashboardCard title="Farm Score Results">
+          <FarmScoreResults data={farmScoreData} />
+        </DashboardCard>
+      )}
+    </div>
+  );
+};
+
+export default FarmDashboard;
