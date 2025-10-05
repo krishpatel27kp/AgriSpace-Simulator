@@ -14,34 +14,38 @@ const GrowthStageProgress = ({ cropData, currentDay = 0, cropType = 'wheat' }) =
   // Calculate total days and progress
   const totalDays = cropData?.totalGrowthDays || 120;
   const progress = (currentDay / totalDays) * 100;
-  
+
+  // Helper to get duration from start/end
+  const getStageDuration = (stageData) => {
+    if (!stageData) return 0;
+    return (stageData.end - stageData.start + 1);
+  };
+
   // Determine current stage
   const getCurrentStage = (day) => {
-    let dayCount = 0;
     for (const stage of stages) {
-      dayCount += cropData?.growthStages[stage].duration || 0;
-      if (day <= dayCount) return stage;
+      const stageData = cropData?.growthStages[stage];
+      if (!stageData) continue;
+      if (day >= stageData.start && day <= stageData.end) return stage;
     }
     return 'maturity';
   };
 
   const currentStage = getCurrentStage(currentDay);
-  
+
   // Generate growth data for chart
   const getGrowthData = () => {
     let data = [];
     let accumulatedDays = 0;
     let accumulatedGrowth = 0;
-    
+
     stages.forEach(stage => {
       const stageData = cropData?.growthStages[stage];
-      const duration = stageData?.duration || 0;
+      const duration = getStageDuration(stageData);
       const growthRate = stageData?.sensitivity || 1;
-      
       for (let day = 1; day <= duration; day++) {
         accumulatedDays++;
         accumulatedGrowth += growthRate;
-        
         if (accumulatedDays % 5 === 0 || accumulatedDays === totalDays) {
           data.push({
             day: accumulatedDays,
@@ -50,7 +54,6 @@ const GrowthStageProgress = ({ cropData, currentDay = 0, cropType = 'wheat' }) =
         }
       }
     });
-    
     return data;
   };
 
@@ -67,7 +70,7 @@ const GrowthStageProgress = ({ cropData, currentDay = 0, cropType = 'wheat' }) =
         <div className="h-6 bg-gray-200 rounded-full overflow-hidden">
           {stages.map((stage, index) => {
             const stageData = cropData?.growthStages[stage];
-            const stageWidth = ((stageData?.duration || 0) / totalDays) * 100;
+            const stageWidth = ((getStageDuration(stageData)) / totalDays) * 100;
             return (
               <div
                 key={stage}

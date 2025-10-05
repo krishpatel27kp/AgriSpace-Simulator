@@ -1,43 +1,31 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMapEvents } from 'react-leaflet';
+import { Icon } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import L from 'leaflet';
 
-// Fix for default marker icons in react-leaflet
-delete L.Icon.Default.prototype._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
-  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+// Custom marker icon
+const customIcon = new Icon({
+  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41]
 });
 
 // Map click handler component
-function LocationMarker({ onLocationSelect }) {
-  const [position, setPosition] = useState(null);
-
-  const map = useMapEvents({
-    click(e) {
+const MapClickHandler = ({ onLocationSelect }) => {
+  useMapEvents({
+    click: (e) => {
       const { lat, lng } = e.latlng;
-      setPosition([lat, lng]);
       onLocationSelect({
-        latitude: lat.toFixed(6),
-        longitude: lng.toFixed(6)
+        lat: parseFloat(lat.toFixed(6)),
+        lng: parseFloat(lng.toFixed(6))
       });
     },
   });
-
-  return position === null ? null : (
-    <Marker position={position}>
-      <Popup>
-        <div className="text-sm">
-          <div className="font-semibold mb-1">Selected Location</div>
-          <div>Latitude: {position[0].toFixed(6)}°</div>
-          <div>Longitude: {position[1].toFixed(6)}°</div>
-        </div>
-      </Popup>
-    </Marker>
-  );
-}
+  return null;
+};
 
 // Weather data display component
 const WeatherPopup = ({ data, isLoading, error }) => {
@@ -88,7 +76,7 @@ const WeatherPopup = ({ data, isLoading, error }) => {
   );
 };
 
-const FarmMap = ({ onLocationSelect, weatherData, isLoading, error }) => {
+const FarmMap = ({ onLocationSelect, weatherData = null, isLoading = false, error = null }) => {
   return (
     <div className="relative w-full h-[400px] rounded-xl overflow-hidden shadow-lg">
       <WeatherPopup data={weatherData} isLoading={isLoading} error={error} />
@@ -102,7 +90,18 @@ const FarmMap = ({ onLocationSelect, weatherData, isLoading, error }) => {
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
-        <LocationMarker onLocationSelect={onLocationSelect} />
+        <MapClickHandler onLocationSelect={onLocationSelect} />
+        {weatherData && (
+          <Marker position={[weatherData.lat, weatherData.lng]} icon={customIcon}>
+            <Popup>
+              <div className="text-sm">
+                <div className="font-semibold mb-1">Selected Location</div>
+                <div>Latitude: {weatherData.lat.toFixed(6)}°</div>
+                <div>Longitude: {weatherData.lng.toFixed(6)}°</div>
+              </div>
+            </Popup>
+          </Marker>
+        )}
       </MapContainer>
     </div>
   );

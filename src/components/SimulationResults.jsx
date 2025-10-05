@@ -1,3 +1,4 @@
+import { CROP_WATER_REQUIREMENTS } from '../utils/advancedCropAnalysis';
 import React from 'react';
 import { motion } from 'framer-motion';
 import {
@@ -18,6 +19,16 @@ import {
 } from 'recharts';
 
 const SimulationResults = ({ data, dailyStats, environmentalData }) => {
+  // Water consumption calculation
+  const cropType = data.cropType || data.crop || '';
+  const waterReq = CROP_WATER_REQUIREMENTS[cropType?.toLowerCase()];
+  let waterPerAcre = null;
+  if (waterReq) {
+    waterPerAcre = {
+      min: Math.round(waterReq.waterPerHectare.min / 2.47105),
+      max: Math.round(waterReq.waterPerHectare.max / 2.47105)
+    };
+  }
   // Format daily stats for the area chart
   const growthData = dailyStats.map((stat, index) => ({
     day: index + 1,
@@ -175,6 +186,16 @@ const SimulationResults = ({ data, dailyStats, environmentalData }) => {
           Recommendations
         </h3>
         <ul className="space-y-2">
+        {waterPerAcre && (
+          <li className="flex items-start space-x-2 text-blue-600 dark:text-blue-300">
+            <span className="text-blue-500">💧</span>
+            <span>
+              Water Consumption: <span className="font-bold">{waterPerAcre.min.toLocaleString()} - {waterPerAcre.max.toLocaleString()} liters/acre</span> (monthly)
+              <br />
+              <span className="text-xs text-blue-400">Irrigation Frequency: {waterReq.irrigationFrequency}</span>
+            </span>
+          </li>
+        )}
           {data.recommendations.map((rec, index) => (
             <li
               key={index}

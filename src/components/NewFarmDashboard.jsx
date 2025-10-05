@@ -183,6 +183,12 @@ const NewFarmDashboard = ({ weatherData, isLoading, error: apiError }) => {
       }));
 
       // Calculate water efficiency
+      const params = {
+        cropType: simulationData?.farmData?.cropType ?? 'wheat',
+        irrigation: farmSettings?.irrigation ?? 50,
+        rainfall: weatherData?.PRECTOTCORR ?? 25,
+        fertilizer: farmSettings?.fertilizer ?? 50
+      };
       const optimalWater = params.cropType === 'wheat' ? 450 : params.cropType === 'rice' ? 900 : 600;
       const waterUsed = (params.irrigation * 5) + (params.rainfall * 10);
       const waterEfficiency = Math.max(0, 100 - Math.abs(waterUsed - optimalWater) / (optimalWater / 100));

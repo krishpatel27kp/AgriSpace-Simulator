@@ -1,0 +1,31 @@
+import React from 'react';
+import Navbar from './components/Navbar';
+import Footer from './components/Footer';
+import FarmSimulator from './components/NewFarmSimulator';
+import { ThemeProvider, useTheme } from './context/ThemeContext';
+
+function AppContent() {
+  const { isDarkMode } = useTheme();
+
+  return (
+    <div className={`min-h-screen flex flex-col ${isDarkMode ? 'dark' : ''}`}>
+      <Navbar />
+      <main className="flex-grow bg-gray-100">
+        <div className="container mx-auto px-4 py-8">
+          <FarmSimulator />
+        </div>
+      </main>
+      <Footer />
+    </div>
+  );
+}
+
+function App() {
+  return (
+    <ThemeProvider>
+      <AppContent />
+    </ThemeProvider>
+  );
+}
+
+export default App;

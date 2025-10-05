@@ -5,9 +5,14 @@ import tailwindcss from 'tailwindcss'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
-  css: {
-    postcss: {
-      plugins: [tailwindcss()],
-    },
-  },
+  server: {
+    proxy: {
+      '/nasa-api': {
+        target: 'https://power.larc.nasa.gov',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/nasa-api/, ''),
+        secure: false,
+      }
+    }
+  }
 })

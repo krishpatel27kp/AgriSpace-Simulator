@@ -31,7 +31,7 @@ const InputField = ({ label, value, onChange, type = 'text', unit = '', min, max
 
 const FarmDataInput = ({ onSubmit }) => {
   const [farmData, setFarmData] = useState({
-    farmSize: '10',
+    farmSizeAcres: 10,
     cropType: 'wheat',
     soilType: 'loam',
     currentIrrigation: '5',
@@ -41,13 +41,19 @@ const FarmDataInput = ({ onSubmit }) => {
   
   const [error, setError] = useState('');
 
+  // Convert acres to hectares
+  const acresToHectares = (acres) => acres * 0.404686;
+
   const handleSubmit = (e) => {
     e.preventDefault();
     setError('');
 
+    // Convert farm size from acres to hectares for analysis
+    const farmSizeHectares = acresToHectares(Number(farmData.farmSizeAcres));
+
     // Validate required numeric fields
     const numericFields = {
-      farmSize: 'Farm Size',
+      farmSizeAcres: 'Farm Size',
       currentIrrigation: 'Current Irrigation'
     };
 
@@ -60,9 +66,16 @@ const FarmDataInput = ({ onSubmit }) => {
     }
 
     try {
+      const farmSizeAcres = parseFloat(farmData.farmSizeAcres);
+      if (isNaN(farmSizeAcres) || farmSizeAcres <= 0) {
+        setError('Please enter a valid farm size greater than 0 acres');
+        return;
+      }
+
       const validatedData = {
         ...farmData,
-        farmSize: parseFloat(farmData.farmSize),
+        farmSizeAcres: farmSizeAcres,
+        farmSizeHectares: acresToHectares(farmSizeAcres),
         currentIrrigation: parseFloat(farmData.currentIrrigation),
         soilType: farmData.soilType || 'loam',
         cropType: farmData.cropType || 'wheat',
@@ -75,7 +88,7 @@ const FarmDataInput = ({ onSubmit }) => {
 
       // Clear form
       setFarmData({
-        farmSize: '10',
+        farmSizeAcres: 10,
         cropType: 'wheat',
         soilType: 'loam',
         currentIrrigation: '5',
@@ -113,12 +126,13 @@ const FarmDataInput = ({ onSubmit }) => {
       )}
       <InputField
         label="Farm Size"
-        value={farmData.farmSize}
-        onChange={(value) => setFarmData(prev => ({ ...prev, farmSize: value }))}
+        value={farmData.farmSizeAcres}
+        onChange={(value) => setFarmData(prev => ({ ...prev, farmSizeAcres: value }))}
         type="number"
-        unit="hectares"
-        min={0}
-        tooltip="Enter the total size of your farmland"
+        unit="acres"
+        min={0.1}
+        max={10000}
+        tooltip="Enter your farm size in acres (1 acre = 0.404686 hectares)"
       />
 
       <div className="mb-4 relative group">
@@ -140,6 +154,17 @@ const FarmDataInput = ({ onSubmit }) => {
           <option value="corn">Corn</option>
         </select>
       </div>
+
+      <InputField
+        label="Farm Size"
+        value={farmData.farmSizeAcres}
+        onChange={(value) => setFarmData(prev => ({ ...prev, farmSizeAcres: value }))}
+        type="number"
+        unit="acres"
+        min={0.1}
+        max={10000}
+        tooltip="Enter your farm size in acres (1 acre = 0.404686 hectares)"
+      />
 
       <div className="mb-4 relative group">
         <label className="flex text-gray-700 dark:text-gray-300 text-sm font-medium mb-2 items-center">
